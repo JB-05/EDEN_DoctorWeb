@@ -1,4 +1,4 @@
-// File: E:\EDEN_4_0\app\patients\layout.tsx
+// File: E:\EDEN_4_0\DrWeb\app\patients\layout.tsx
 import * as entry from '../../../../app/patients/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Sidebar } from '@/components/layout/Sidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -76,20 +75,55 @@ const mockAppointments = [
 ]
 
 export default function AppointmentsPage() {
-  const [showScheduleModal, setShowScheduleModal] = useState(false)
-  const [filter, setFilter] = useState('upcoming')
+  const [showMeetingModal, setShowMeetingModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
+  const [activeFilters, setActiveFilters] = useState({
+    status: 'all',
+    type: 'all',
+    date: 'all'
+  })
+
+  const filterOptions = {
+    status: ['all', 'confirmed', 'pending', 'cancelled'],
+    type: ['all', 'video', 'in-person', 'phone'],
+    date: ['all', 'today', 'this-week', 'this-month']
+  }
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }
+
+  const handleFilterChange = (category: string, value: string) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [category]: value
+    }))
+  }
+
+  const handleNewAppointment = () => {
+    setShowMeetingModal(true)
+  }
+
+  const handleJoinCall = (appointmentId: string) => {
+    console.log('Joining call for appointment:', appointmentId)
+  }
+
+  const handleConfirmAppointment = (appointmentId: string) => {
+    console.log('Confirming appointment:', appointmentId)
+  }
 
   const filteredAppointments = mockAppointments.filter(appointment => {
     const appointmentDate = new Date(appointment.scheduled_time)
     const now = new Date()
     
-    switch (filter) {
-      case 'upcoming':
-        return appointmentDate > now && appointment.status === 'scheduled'
-      case 'past':
-        return appointmentDate < now || appointment.status === 'completed'
+    switch (activeFilters.date) {
       case 'today':
         return appointmentDate.toDateString() === now.toDateString()
+      case 'this-week':
+        return appointmentDate > now && appointmentDate < new Date(now.setDate(now.getDate() + 7))
+      case 'this-month':
+        return appointmentDate > now && appointmentDate < new Date(now.getFullYear(), now.getMonth() + 1, 0)
       default:
         return true
     }
@@ -126,176 +160,171 @@ export default function AppointmentsPage() {
     }
   }
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 lg:ml-64">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-6 py-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 font-medical">
-                  Appointments
-                </h1>
-                <p className="text-gray-600">
-                  Manage virtual consultations and meetings
-                </p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="primary"
-                  icon={<Plus className="h-4 w-4" />}
-                  onClick={() => setShowScheduleModal(true)}
-                >
-                  Schedule Meeting
-                </Button>
-              </div>
+  const renderHeader = () => (
+    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900 truncate">
+                Appointments
+              </h1>
             </div>
+            <p className="mt-1 text-sm text-gray-500 truncate">
+              Schedule and manage patient consultations
+            </p>
           </div>
-        </header>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Button 
+              variant="outline" 
+              className="text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              <span>Filter</span>
+            </Button>
+            <Button 
+              variant="primary"
+              onClick={handleNewAppointment}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              <span>New Appointment</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </header>
+  )
 
-        {/* Main Content */}
-        <main className="p-6">
-          {/* Filters */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
-            <div className="flex gap-2">
-              {[
-                { key: 'upcoming', label: 'Upcoming' },
-                { key: 'today', label: 'Today' },
-                { key: 'past', label: 'Past' },
-                { key: 'all', label: 'All' }
-              ].map((filterOption) => (
+  const renderFilters = () => (
+    showFilters && (
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.status.map(status => (
                 <Button
-                  key={filterOption.key}
-                  variant={filter === filterOption.key ? 'primary' : 'outline'}
+                  key={status}
+                  variant={activeFilters.status === status ? 'primary' : 'outline'}
                   size="sm"
-                  onClick={() => setFilter(filterOption.key)}
+                  onClick={() => handleFilterChange('status', status)}
+                  className="capitalize"
                 >
-                  {filterOption.label}
+                  {status}
                 </Button>
               ))}
             </div>
           </div>
-
-          {/* Appointments List */}
-          <div className="space-y-4">
-            {filteredAppointments.map((appointment) => (
-              <Card key={appointment.id} className="hover:shadow-lg transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {appointment.title}
-                          </h3>
-                          <p className="text-gray-600">
-                            with <span className="font-medium">{appointment.patient_name}</span>
-                          </p>
-                        </div>
-                        <Badge className={getStatusColor(appointment.status, appointment.scheduled_time)}>
-                          {getStatusLabel(appointment.status, appointment.scheduled_time)}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          {new Date(appointment.scheduled_time).toLocaleDateString()}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Clock className="h-4 w-4 mr-2" />
-                          {new Date(appointment.scheduled_time).toLocaleTimeString()} ({appointment.duration_minutes}m)
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <span className="mr-2">{getPlatformIcon(appointment.meeting_platform)}</span>
-                          {appointment.meeting_platform.replace('_', ' ')}
-                        </div>
-                      </div>
-
-                      {appointment.description && (
-                        <p className="text-gray-700 mb-4">{appointment.description}</p>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          {appointment.include_family && (
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Users className="h-4 w-4 mr-1" />
-                              Family included
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          {appointment.status === 'scheduled' && (
-                            <>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                icon={<Video className="h-3 w-3" />}
-                                onClick={() => window.open(appointment.meeting_url, '_blank')}
-                              >
-                                Join Meeting
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                icon={<ExternalLink className="h-3 w-3" />}
-                                onClick={() => navigator.clipboard.writeText(appointment.meeting_url)}
-                              >
-                                Copy Link
-                              </Button>
-                            </>
-                          )}
-                          <Button variant="outline" size="sm" icon={<Edit className="h-3 w-3" />}>
-                            Edit
-                          </Button>
-                          <Button variant="outline" size="sm" icon={<Trash2 className="h-3 w-3" />}>
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {filteredAppointments.length === 0 && (
-            <div className="text-center py-12">
-              <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No {filter === 'all' ? '' : filter} appointments
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {filter === 'upcoming' 
-                  ? 'Schedule virtual meetings with your patients'
-                  : `No ${filter} appointments found`
-                }
-              </p>
-              <Button
-                variant="primary"
-                icon={<Plus className="h-4 w-4" />}
-                onClick={() => setShowScheduleModal(true)}
-              >
-                Schedule New Meeting
-              </Button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.type.map(type => (
+                <Button
+                  key={type}
+                  variant={activeFilters.type === type ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => handleFilterChange('type', type)}
+                  className="capitalize"
+                >
+                  {type}
+                </Button>
+              ))}
             </div>
-          )}
-        </main>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.date.map(date => (
+                <Button
+                  key={date}
+                  variant={activeFilters.date === date ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => handleFilterChange('date', date)}
+                  className="capitalize"
+                >
+                  {date.replace('-', ' ')}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
+    )
+  )
 
-      {/* Schedule Meeting Modal */}
-      <ScheduleMeeting
-        isOpen={showScheduleModal}
-        onClose={() => setShowScheduleModal(false)}
+  const renderAppointments = () => (
+    <div className="grid grid-cols-1 gap-4">
+      {filteredAppointments.map((appointment) => (
+        <Card key={appointment.id} className="bg-white">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
+                  <span className="text-primary-600 font-medium">
+                    {appointment.patient_name.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <div>
+                  <CardTitle>{appointment.title}</CardTitle>
+                  <p className="text-sm text-gray-500">{appointment.patient_name}</p>
+                </div>
+              </div>
+              <Badge className={getStatusColor(appointment.status, appointment.scheduled_time)}>
+                {getStatusLabel(appointment.status, appointment.scheduled_time)}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-5 w-5 text-gray-400" />
+                  <span>{new Date(appointment.scheduled_time).toLocaleString()}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5 text-gray-400" />
+                  <span>{appointment.duration_minutes} minutes</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Video className="h-5 w-5 text-gray-400" />
+                  <span>{getPlatformIcon(appointment.meeting_platform)} {appointment.meeting_platform.replace('_', ' ')}</span>
+                </div>
+                {appointment.include_family && (
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-5 w-5 text-gray-400" />
+                    <span>Family included</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-gray-600">{appointment.description}</p>
+              <div className="flex items-center justify-end space-x-2 pt-4 border-t border-gray-100">
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button variant="primary" size="sm" onClick={() => handleJoinCall(appointment.id)}>
+                  <Video className="h-4 w-4 mr-2" />
+                  Join Call
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="flex-1 min-w-0">
+      {renderHeader()}
+      <main className="p-4 sm:p-6 lg:p-8">
+        {renderFilters()}
+        {renderAppointments()}
+      </main>
+      <ScheduleMeeting 
+        isOpen={showMeetingModal}
+        onClose={() => setShowMeetingModal(false)}
       />
     </div>
   )

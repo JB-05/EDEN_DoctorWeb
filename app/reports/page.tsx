@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Sidebar } from '@/components/layout/Sidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Input'
@@ -18,7 +17,8 @@ import {
   Minus,
   Eye,
   Mail,
-  Printer
+  Printer,
+  BarChart2
 } from 'lucide-react'
 
 // Mock reports data
@@ -99,17 +99,17 @@ export default function ReportsPage() {
     include_recommendations: true
   })
   const [loading, setLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showGenerateModal, setShowGenerateModal] = useState(false)
 
   const handleGenerateReport = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      // TODO: Implement report generation
       console.log('Generating report:', newReportData)
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Reset form and switch to existing reports
       setNewReportData({
         title: '',
         report_type: '',
@@ -148,351 +148,225 @@ export default function ReportsPage() {
     }
   }
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 lg:ml-64">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-6 py-4">
-            <div className="flex justify-between items-center">
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }
+
+  const handleExport = () => {
+    const data = {
+      timestamp: new Date().toISOString(),
+      reports: mockReports
+    }
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reports-export-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }
+
+  const handleDownloadReport = (reportId: string, reportName: string) => {
+    console.log(`Downloading report: ${reportId} - ${reportName}`)
+    setTimeout(() => {
+      const blob = new Blob(['Sample report content'], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${reportName.toLowerCase().replace(/\s+/g, '-')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    }, 1000)
+  }
+
+  const renderHeader = () => (
+    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900 truncate">
+                Reports
+              </h1>
+            </div>
+            <p className="mt-1 text-sm text-gray-500 truncate">
+              Generate and analyze patient reports
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Button 
+              variant="outline"
+              onClick={handleExport}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              <span>Export</span>
+            </Button>
+            <Button 
+              variant="primary"
+              onClick={() => setShowGenerateModal(true)}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              <span>Generate Report</span>
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search reports..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+
+  const renderReportCategories = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <Card>
+        <CardContent>
+          <div className="flex items-center justify-between p-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Adherence Reports</h3>
+              <p className="mt-1 text-sm text-gray-500">Track medication adherence</p>
+            </div>
+            <div className="p-3 bg-blue-50 rounded-full">
+              <TrendingUp className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <div className="flex items-center justify-between p-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Patient Reports</h3>
+              <p className="mt-1 text-sm text-gray-500">Individual patient analysis</p>
+            </div>
+            <div className="p-3 bg-green-50 rounded-full">
+              <Users className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <div className="flex items-center justify-between p-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Analytics</h3>
+              <p className="mt-1 text-sm text-gray-500">Trends and insights</p>
+            </div>
+            <div className="p-3 bg-purple-50 rounded-full">
+              <BarChart2 className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+
+  const renderReportList = () => (
+    <div className="grid grid-cols-1 gap-4">
+      {mockReports.map((report) => (
+        <Card key={report.id}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 font-medical">
-                  Reports & Analytics
-                </h1>
-                <p className="text-gray-600">
-                  Generate comprehensive reports and track patient medication adherence
-                </p>
+                <CardTitle>{report.title}</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">{report.patient_name}</p>
               </div>
-              <div className="flex items-center space-x-4">
-                <Button variant="secondary" icon={<Printer className="h-4 w-4" />}>
-                  Print Options
-                </Button>
-                <Button variant="primary" icon={<FileText className="h-4 w-4" />} onClick={() => setActiveTab('generate')}>
-                  Generate New Report
-                </Button>
-              </div>
+              <Badge className={getStatusColor(report.status)}>
+                {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+              </Badge>
             </div>
-          </div>
-        </header>
-
-        {/* Tabs */}
-        <nav className="bg-white border-b border-gray-200">
-          <div className="px-6">
-            <div className="flex space-x-8">
-              <button
-                onClick={() => setActiveTab('existing')}
-                className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'existing'
-                    ? 'border-medical-500 text-medical-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Existing Reports
-              </button>
-              <button
-                onClick={() => setActiveTab('generate')}
-                className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'generate'
-                    ? 'border-medical-500 text-medical-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Generate Report
-              </button>
-            </div>
-          </div>
-        </nav>
-
-        {/* Main Content */}
-        <main className="p-6">
-          {activeTab === 'existing' && (
-            <div className="space-y-6">
-              {/* Search and Filters */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Search reports..."
-                    icon={<Search className="h-4 w-4" />}
-                  />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-5 w-5 text-gray-400" />
+                  <span className="text-sm text-gray-600">{report.date_range}</span>
                 </div>
-                <div className="flex gap-2">
-                  <Select
-                    options={[
-                      { value: 'all', label: 'All Types' },
-                      ...reportTypeOptions
-                    ]}
-                  />
-                  <Button variant="outline" icon={<Filter className="h-4 w-4" />}>
-                    More Filters
-                  </Button>
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-gray-400" />
+                  <span className="text-sm text-gray-600">{getReportTypeLabel(report.report_type)}</span>
                 </div>
               </div>
 
-              {/* Reports List */}
-              <div className="space-y-4">
-                {mockReports.map((report) => (
-                  <Card key={report.id} className="hover:shadow-lg transition-all duration-200">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            {report.title}
-                          </h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                            <span className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {report.date_range}
-                            </span>
-                            <span className="flex items-center">
-                              <Users className="h-4 w-4 mr-1" />
-                              {report.patient_name}
-                            </span>
-                            <Badge variant="default">
-                              {getReportTypeLabel(report.report_type)}
-                            </Badge>
-                          </div>
-                        </div>
-                        <Badge className={getStatusColor(report.status)}>
-                          {report.status}
-                        </Badge>
-                      </div>
-
-                      {/* Key Metrics */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        {report.report_type === 'adherence_summary' && (
-                          <>
-                            <div className="text-center p-3 bg-medical-50 rounded-lg">
-                              <div className="text-2xl font-bold text-medical-600">
-                                {report.key_metrics.overall_adherence}%
-                              </div>
-                              <div className="text-xs text-gray-600">Overall Adherence</div>
-                            </div>
-                            <div className="text-center p-3 bg-gray-50 rounded-lg">
-                              <div className="text-2xl font-bold text-gray-900">
-                                {report.key_metrics.patients_count}
-                              </div>
-                              <div className="text-xs text-gray-600">Patients</div>
-                            </div>
-                            <div className="text-center p-3 bg-gray-50 rounded-lg">
-                              <div className="text-2xl font-bold text-gray-900">
-                                {report.key_metrics.total_medications}
-                              </div>
-                              <div className="text-xs text-gray-600">Medications</div>
-                            </div>
-                            <div className="text-center p-3 bg-danger-50 rounded-lg">
-                              <div className="text-2xl font-bold text-danger-600">
-                                {report.key_metrics.missed_doses}
-                              </div>
-                              <div className="text-xs text-gray-600">Missed Doses</div>
-                            </div>
-                          </>
-                        )}
-
-                        {report.report_type === 'patient_individual' && (
-                          <>
-                            <div className="text-center p-3 bg-medical-50 rounded-lg">
-                              <div className="text-2xl font-bold text-medical-600">
-                                {report.key_metrics.adherence_rate}%
-                              </div>
-                              <div className="text-xs text-gray-600">Adherence Rate</div>
-                            </div>
-                            <div className="text-center p-3 bg-gray-50 rounded-lg">
-                              <div className="text-2xl font-bold text-gray-900">
-                                {report.key_metrics.medications_count}
-                              </div>
-                              <div className="text-xs text-gray-600">Medications</div>
-                            </div>
-                            <div className="text-center p-3 bg-danger-50 rounded-lg">
-                              <div className="text-2xl font-bold text-danger-600">
-                                {report.key_metrics.missed_doses}
-                              </div>
-                              <div className="text-xs text-gray-600">Missed Doses</div>
-                            </div>
-                            <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                              <div className="text-2xl font-bold text-yellow-600">
-                                {report.key_metrics.symptom_reports}
-                              </div>
-                              <div className="text-xs text-gray-600">Symptom Reports</div>
-                            </div>
-                          </>
-                        )}
-
-                        {report.report_type === 'adherence_alert' && (
-                          <>
-                            <div className="text-center p-3 bg-danger-50 rounded-lg">
-                              <div className="text-2xl font-bold text-danger-600">
-                                {report.key_metrics.critical_patients}
-                              </div>
-                              <div className="text-xs text-gray-600">Critical</div>
-                            </div>
-                            <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                              <div className="text-2xl font-bold text-yellow-600">
-                                {report.key_metrics.at_risk_patients}
-                              </div>
-                              <div className="text-xs text-gray-600">At Risk</div>
-                            </div>
-                            <div className="text-center p-3 bg-gray-50 rounded-lg">
-                              <div className="text-2xl font-bold text-gray-900">
-                                {report.key_metrics.total_missed_doses}
-                              </div>
-                              <div className="text-xs text-gray-600">Missed Doses</div>
-                            </div>
-                            <div className="text-center p-3 bg-medical-50 rounded-lg">
-                              <div className="text-2xl font-bold text-medical-600">
-                                {report.key_metrics.improvement_needed}
-                              </div>
-                              <div className="text-xs text-gray-600">Need Improvement</div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <div className="text-sm text-gray-500">
-                          Generated on {new Date(report.generated_at).toLocaleDateString()}
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" icon={<Eye className="h-3 w-3" />}>
-                            View
-                          </Button>
-                          <Button variant="outline" size="sm" icon={<Download className="h-3 w-3" />}>
-                            Download PDF
-                          </Button>
-                          <Button variant="outline" size="sm" icon={<Mail className="h-3 w-3" />}>
-                            Email
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
+                {Object.entries(report.key_metrics).map(([key, value]) => (
+                  <div key={key} className="text-center">
+                    <p className="text-2xl font-semibold text-gray-900">{value}</p>
+                    <p className="text-sm text-gray-500">{key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</p>
+                  </div>
                 ))}
               </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-4 border-t border-gray-100">
+                <Button variant="outline" size="sm" onClick={() => handleDownloadReport(report.id, report.title)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+              </div>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 
-          {activeTab === 'generate' && (
-            <div className="max-w-2xl">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Generate New Report</CardTitle>
-                  <p className="text-gray-600 text-sm">
-                    Create comprehensive reports on patient medication adherence and health outcomes
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleGenerateReport} className="space-y-6">
-                    <Input
-                      name="title"
-                      label="Report Title"
-                      placeholder="Weekly Adherence Summary - January 2024"
-                      value={newReportData.title}
-                      onChange={handleChange}
-                      required
-                    />
+  return (
+    <div className="flex-1 min-w-0">
+      {renderHeader()}
+      <main className="p-4 sm:p-6 lg:p-8">
+        {renderReportCategories()}
+        {renderReportList()}
+      </main>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Select
-                        name="report_type"
-                        label="Report Type"
-                        options={[{ value: '', label: 'Select report type...' }, ...reportTypeOptions]}
-                        value={newReportData.report_type}
-                        onChange={handleChange}
-                        required
-                      />
-                      <Select
-                        name="time_range"
-                        label="Time Range"
-                        options={[{ value: '', label: 'Select time range...' }, ...timeRangeOptions]}
-                        value={newReportData.time_range}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <Input
-                      name="patient_filter"
-                      label="Patient Filter (Optional)"
-                      placeholder="All patients, specific patient, or condition-based filter"
-                      value={newReportData.patient_filter}
-                      onChange={handleChange}
-                    />
-
-                    <div className="space-y-4">
-                      <h4 className="font-medium text-gray-900">Report Options</h4>
-                      <div className="space-y-3">
-                        <div className="flex items-center">
-                          <input
-                            id="include_charts"
-                            name="include_charts"
-                            type="checkbox"
-                            checked={newReportData.include_charts}
-                            onChange={handleChange}
-                            className="h-4 w-4 text-medical-600 focus:ring-medical-500 border-gray-300 rounded"
-                          />
-                          <label htmlFor="include_charts" className="ml-3 block text-sm text-gray-900">
-                            Include charts and visualizations
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            id="include_recommendations"
-                            name="include_recommendations"
-                            type="checkbox"
-                            checked={newReportData.include_recommendations}
-                            onChange={handleChange}
-                            className="h-4 w-4 text-medical-600 focus:ring-medical-500 border-gray-300 rounded"
-                          />
-                          <label htmlFor="include_recommendations" className="ml-3 block text-sm text-gray-900">
-                            Include AI-generated recommendations
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-medical-50 p-4 rounded-lg">
-                      <div className="flex items-start space-x-3">
-                        <TrendingUp className="h-5 w-5 text-medical-600 mt-0.5" />
-                        <div>
-                          <h4 className="font-medium text-gray-900 text-sm">Report Preview</h4>
-                          <p className="text-xs text-gray-600 mt-1">
-                            Reports will include patient adherence metrics, trend analysis, medication effectiveness, 
-                            and personalized recommendations for improving patient outcomes.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex space-x-3 pt-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        fullWidth
-                        onClick={() => setActiveTab('existing')}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        fullWidth
-                        loading={loading}
-                        icon={!loading ? <FileText className="h-4 w-4" /> : undefined}
-                      >
-                        {loading ? 'Generating Report...' : 'Generate Report'}
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
+      {/* Generate Report Modal */}
+      {showGenerateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Generate New Report</h2>
+            {/* Add form fields for report generation */}
+            <div className="flex justify-end mt-6 space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowGenerateModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary"
+                onClick={handleGenerateReport}
+              >
+                Generate
+              </Button>
             </div>
-          )}
-        </main>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

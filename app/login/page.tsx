@@ -2,14 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Mail, Lock, Stethoscope, Heart, Eye, EyeOff } from 'lucide-react'
-import { auth } from '@/lib/supabase'
+import { Mail, Lock, Stethoscope, Eye, EyeOff } from 'lucide-react'
 
-// Mock doctor credentials for demo (replace with real authentication)
+// Mock doctor credentials for demo
 const MOCK_DOCTORS = [
   {
     email: 'dr.sarah@hospital.com',
@@ -41,26 +39,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { session } = await auth.getSession()
-        if (session) {
-          router.push('/dashboard')
-        }
-      } catch (error) {
-        // If Supabase is not configured, check localStorage for demo
-        const savedUser = localStorage.getItem('smartmed_user')
-        if (savedUser) {
-          router.push('/dashboard')
-        }
-      }
-    }
-    
-    checkAuth()
-  }, [router])
-
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
@@ -75,73 +53,37 @@ export default function LoginPage() {
       // Basic validation
       if (!formData.email || !formData.password) {
         setError('Please enter both email and password')
-        setLoading(false)
         return
       }
 
       if (!validateEmail(formData.email)) {
         setError('Please enter a valid email address')
-        setLoading(false)
         return
       }
 
       if (formData.password.length < 6) {
         setError('Password must be at least 6 characters long')
-        setLoading(false)
         return
       }
 
-      console.log('Attempting login with:', formData.email)
-
-      // Try demo authentication first (since Supabase is not configured)
+      // Check mock credentials
       const doctor = MOCK_DOCTORS.find(
         doc => doc.email.toLowerCase() === formData.email.toLowerCase() && 
                doc.password === formData.password
       )
 
       if (doctor) {
-        console.log('Demo login successful for:', doctor.name)
-        
-        // Successful demo login
-        const userData = {
-          id: 'demo_' + Date.now(),
+        // Store user data in localStorage for demo
+        localStorage.setItem('smartmed_user', JSON.stringify({
+          id: '1',
           email: doctor.email,
           name: doctor.name,
           specialization: doctor.specialization
-        }
-        
-        localStorage.setItem('smartmed_user', JSON.stringify(userData))
-        console.log('User data stored in localStorage:', userData)
-        
-        // Force redirect to dashboard
-        window.location.href = '/dashboard'
-        return
+        }))
+        router.push('/dashboard')
+      } else {
+        setError('Invalid email or password. Try demo credentials:\n• dr.sarah@hospital.com / doctor123\n• dr.michael@clinic.com / medical456\n• dr.emily@medcenter.com / healthcare789')
       }
-
-      // If demo auth fails, try Supabase as fallback
-      try {
-        const { data, error: authError } = await auth.signIn(formData.email, formData.password)
-        
-        if (data?.user && !authError) {
-          // Successful Supabase login
-          const userData = {
-            id: data.user.id,
-            email: data.user.email,
-            name: 'Dr. ' + (data.user.user_metadata?.name || 'Doctor'),
-            specialization: data.user.user_metadata?.specialization || 'General Medicine'
-          }
-          
-          localStorage.setItem('smartmed_user', JSON.stringify(userData))
-          window.location.href = '/dashboard'
-          return
-        }
-      } catch (supabaseError) {
-        console.log('Supabase authentication failed:', supabaseError)
-      }
-
-      // If both demo and Supabase fail
-      setError('Invalid email or password. Try demo credentials:\n• dr.sarah@hospital.com / doctor123\n• dr.michael@clinic.com / medical456\n• dr.emily@medcenter.com / healthcare789')
-      
     } catch (err: any) {
       console.error('Login error:', err)
       setError(err.message || 'Login failed. Please try again.')
@@ -162,37 +104,15 @@ export default function LoginPage() {
     }
   }
 
-  const handleDemoLogin = async (doctor: typeof MOCK_DOCTORS[0]) => {
-    setFormData({
+  const handleDemoLogin = (doctor: typeof MOCK_DOCTORS[0]) => {
+    // Store user data in localStorage for demo
+    localStorage.setItem('smartmed_user', JSON.stringify({
+      id: '1',
       email: doctor.email,
-      password: doctor.password
-    })
-    
-    // Auto-login after setting credentials
-    setLoading(true)
-    setError('')
-    
-    try {
-      console.log('Auto-login with demo credentials:', doctor.email)
-      
-      const userData = {
-        id: 'demo_' + Date.now(),
-        email: doctor.email,
-        name: doctor.name,
-        specialization: doctor.specialization
-      }
-      
-      localStorage.setItem('smartmed_user', JSON.stringify(userData))
-      console.log('User data stored in localStorage:', userData)
-      
-      // Force redirect to dashboard
-      window.location.href = '/dashboard'
-    } catch (error) {
-      console.error('Auto-login failed:', error)
-      setError('Login failed. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+      name: doctor.name,
+      specialization: doctor.specialization
+    }))
+    router.push('/dashboard')
   }
 
   return (
@@ -245,87 +165,60 @@ export default function LoginPage() {
                 autoComplete="email"
               />
 
-              <Input
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                label="Password"
-                icon={<Lock className="h-4 w-4" />}
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                autoComplete="current-password"
-                endIcon={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                }
-              />
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 text-medical-600 focus:ring-medical-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                    Remember me
-                  </label>
-                </div>
-
-                <div className="text-sm">
-                  <a href="#" className="font-medium text-medical-600 hover:text-medical-500 transition-colors">
-                    Forgot password?
-                  </a>
-                </div>
+              <div className="relative">
+                <Input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  label="Password"
+                  icon={<Lock className="h-4 w-4" />}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
 
               <Button
                 type="submit"
-                variant="primary"
-                size="lg"
-                fullWidth
+                className="w-full"
                 loading={loading}
-                icon={!loading ? <Heart className="h-4 w-4" /> : undefined}
               >
-                {loading ? 'Signing In...' : 'Sign In to Portal'}
+                Sign In
               </Button>
-            </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-6 p-4 bg-medical-50 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Demo Credentials:</h4>
-              <div className="space-y-2">
-                {MOCK_DOCTORS.map((doctor, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => handleDemoLogin(doctor)}
-                    className="w-full text-left p-2 bg-white rounded border border-gray-200 hover:border-medical-300 transition-colors text-xs"
-                  >
-                    <div className="font-medium text-gray-900">{doctor.name}</div>
-                    <div className="text-gray-600">{doctor.email}</div>
-                    <div className="text-gray-500">{doctor.specialization}</div>
-                  </button>
-                ))}
+              {/* Demo Login Section */}
+              <div className="mt-4">
+                <div className="text-sm text-gray-600 mb-2">Quick Demo Login:</div>
+                <div className="space-y-2">
+                  {MOCK_DOCTORS.map((doctor, index) => (
+                    <Button
+                      key={index}
+                      type="button"
+                      variant="outline"
+                      className="w-full text-left"
+                      onClick={() => handleDemoLogin(doctor)}
+                    >
+                      <div>
+                        <div className="font-medium">{doctor.name}</div>
+                        <div className="text-xs text-gray-500">{doctor.specialization}</div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
-
-            {/* Link to signup page */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link href="/signup" className="font-medium text-medical-600 hover:text-medical-500 transition-colors">
-                  Create doctor account
-                </Link>
-              </p>
-            </div>
+            </form>
           </CardContent>
         </Card>
       </div>

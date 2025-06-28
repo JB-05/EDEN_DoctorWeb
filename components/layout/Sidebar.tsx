@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useAuth } from '@/components/auth/AuthProvider'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   Users,
@@ -28,13 +27,19 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
+// Demo user data
+const DEMO_USER = {
+  name: 'Dr. Demo',
+  specialization: 'General Medicine'
+}
+
 export function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const router = useRouter()
 
-  const handleSignOut = async () => {
-    await signOut()
+  const handleSignOut = () => {
+    router.push('/login')
   }
 
   return (
@@ -66,19 +71,20 @@ export function Sidebar() {
               </button>
             </div>
             
-            <SidebarContent pathname={pathname} user={user} onSignOut={handleSignOut} />
+            <SidebarContent pathname={pathname} user={DEMO_USER} onSignOut={handleSignOut} />
           </div>
         </div>
       )}
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-64">
-          <div className="flex flex-col h-0 flex-1 bg-white border-r border-gray-200 shadow-sm">
-            <SidebarContent pathname={pathname} user={user} onSignOut={handleSignOut} />
-          </div>
+      <div className="hidden lg:flex lg:w-64 lg:fixed lg:inset-y-0">
+        <div className="flex flex-col flex-1 min-h-0 bg-white border-r border-gray-200 shadow-sm">
+          <SidebarContent pathname={pathname} user={DEMO_USER} onSignOut={handleSignOut} />
         </div>
       </div>
+
+      {/* Spacer for desktop layout */}
+      <div className="hidden lg:block lg:w-64" aria-hidden="true" />
     </>
   )
 }
@@ -106,21 +112,19 @@ function SidebarContent({ pathname, user, onSignOut }: SidebarContentProps) {
       </div>
 
       {/* User info */}
-      {user && (
-        <div className="px-4 py-4 border-b border-gray-200">
-          <div className="flex items-center">
-            <div className="h-10 w-10 bg-medical-100 rounded-full flex items-center justify-center">
-              <span className="text-medical-600 font-medium text-sm">
-                {user.name?.split(' ').map((n: string) => n[0]).join('') || 'DR'}
-              </span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">{user.name}</p>
-              <p className="text-xs text-gray-500">{user.specialization}</p>
-            </div>
+      <div className="px-4 py-4 border-b border-gray-200">
+        <div className="flex items-center">
+          <div className="h-10 w-10 bg-medical-100 rounded-full flex items-center justify-center">
+            <span className="text-medical-600 font-medium text-sm">
+              {user.name?.split(' ').map((n: string) => n[0]).join('') || 'DR'}
+            </span>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-gray-900">{user.name}</p>
+            <p className="text-xs text-gray-500">{user.specialization}</p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">

@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Sidebar } from '@/components/layout/Sidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -16,7 +15,12 @@ import {
   AlertTriangle,
   Eye,
   Edit,
-  FileText
+  FileText,
+  Phone,
+  Mail,
+  ChevronRight,
+  Clock,
+  Heart
 } from 'lucide-react'
 
 // Mock patients data
@@ -82,6 +86,7 @@ const mockPatients = [
 export default function PatientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [view, setView] = useState<'grid' | 'list'>('list')
 
   const filteredPatients = mockPatients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -93,9 +98,9 @@ export default function PatientsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'stable': return 'bg-healthcare-100 text-healthcare-800'
+      case 'stable': return 'bg-green-100 text-green-800'
       case 'needs_attention': return 'bg-yellow-100 text-yellow-800'
-      case 'critical': return 'bg-danger-100 text-danger-800'
+      case 'critical': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -109,186 +114,208 @@ export default function PatientsPage() {
     }
   }
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 lg:ml-64">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-6 py-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 font-medical">
-                  Patients
-                </h1>
-                <p className="text-gray-600">
-                  Manage and monitor your patients' medication adherence
-                </p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <Button variant="secondary" icon={<FileText className="h-4 w-4" />}>
-                  Export Report
-                </Button>
-                <Button variant="primary" icon={<UserPlus className="h-4 w-4" />}>
-                  Add Patient
-                </Button>
-              </div>
-            </div>
+  const renderHeader = () => (
+    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <div className="px-4 sm:px-6 py-4 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-gray-900 font-medical truncate">
+              Patients
+            </h1>
+            <p className="text-gray-600 mt-1 truncate">
+              Manage and monitor your patients' medication adherence
+            </p>
           </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="p-6">
-          {/* Search and Filters */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search patients by name or email..."
-                icon={<Search className="h-4 w-4" />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="medical-input w-auto"
-              >
-                <option value="all">All Patients</option>
-                <option value="stable">Stable</option>
-                <option value="needs_attention">Needs Attention</option>
-                <option value="critical">Critical</option>
-              </select>
-              <Button variant="outline" icon={<Filter className="h-4 w-4" />}>
-                More Filters
-              </Button>
-            </div>
+          <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
+            <Button 
+              variant="secondary"
+              className="group hover:bg-gray-100 transition-colors"
+            >
+              <FileText className="h-4 w-4 mr-2 group-hover:text-primary-600" />
+              <span className="hidden sm:inline">Export Report</span>
+            </Button>
+            <Button 
+              variant="primary"
+              className="group hover:bg-primary-700 transition-colors"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Add Patient</span>
+            </Button>
           </div>
-
-          {/* Patients Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredPatients.map((patient) => (
-              <Card key={patient.id} className="hover:shadow-lg transition-all duration-200">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-12 w-12 bg-medical-100 rounded-full flex items-center justify-center">
-                        <span className="text-medical-600 font-medium">
-                          {patient.name.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{patient.name}</CardTitle>
-                        <p className="text-sm text-gray-500">Age {patient.age}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getStatusColor(patient.status)}>
-                        {getStatusLabel(patient.status)}
-                      </Badge>
-                      <Button variant="outline" size="sm" className="p-1">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Adherence Rate */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Adherence Rate</span>
-                      <AdherenceBadge rate={patient.adherence_rate} />
-                    </div>
-
-                    {/* Medications */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 flex items-center">
-                        <Pill className="h-4 w-4 mr-1" />
-                        Medications
-                      </span>
-                      <span className="text-sm font-medium">{patient.total_medications}</span>
-                    </div>
-
-                    {/* Missed Doses */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 flex items-center">
-                        <AlertTriangle className="h-4 w-4 mr-1" />
-                        Missed This Week
-                      </span>
-                      <span className={`text-sm font-medium ${
-                        patient.missed_doses_week > 2 ? 'text-danger-600' : 'text-gray-900'
-                      }`}>
-                        {patient.missed_doses_week}
-                      </span>
-                    </div>
-
-                    {/* Medical Conditions */}
-                    <div>
-                      <span className="text-sm text-gray-600 block mb-2">Conditions</span>
-                      <div className="flex flex-wrap gap-1">
-                        {patient.medical_conditions.map((condition, index) => (
-                          <Badge key={index} variant="default" size="sm">
-                            {condition}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Next Appointment */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Next Visit
-                      </span>
-                      <span className="text-sm font-medium">
-                        {new Date(patient.next_appointment).toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div className="pt-2 border-t border-gray-100">
-                      <p className="text-xs text-gray-500">{patient.email}</p>
-                      <p className="text-xs text-gray-500">{patient.phone}</p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="primary" size="sm" fullWidth icon={<Eye className="h-3 w-3" />}>
-                        View Details
-                      </Button>
-                      <Button variant="outline" size="sm" icon={<Calendar className="h-3 w-3" />}>
-                        Schedule
-                      </Button>
-                      <Button variant="outline" size="sm" icon={<Edit className="h-3 w-3" />}>
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {filteredPatients.length === 0 && (
-            <div className="text-center py-12">
-              <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No patients found</h3>
-              <p className="text-gray-600 mb-4">
-                Try adjusting your search criteria or filters
-              </p>
-              <Button variant="primary" icon={<UserPlus className="h-4 w-4" />}>
-                Add Your First Patient
-              </Button>
-            </div>
-          )}
-        </main>
+        </div>
       </div>
+    </header>
+  )
+
+  const renderFilters = () => (
+    <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 min-w-0">
+          <Input
+            placeholder="Search patients by name or email..."
+            icon={<Search className="h-4 w-4 text-gray-400" />}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 sm:gap-3 shrink-0">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[120px]"
+          >
+            <option value="all">All Patients</option>
+            <option value="stable">Stable</option>
+            <option value="needs_attention">Needs Attention</option>
+            <option value="critical">Critical</option>
+          </select>
+          <Button 
+            variant="outline" 
+            className="hover:bg-gray-50 transition-colors"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Filters</span>
+          </Button>
+          <div className="border-l border-gray-200 pl-2 sm:pl-3 flex items-center space-x-2">
+            <Button
+              variant={view === 'grid' ? 'primary' : 'outline'}
+              size="sm"
+              className="px-2 sm:px-3"
+              onClick={() => setView('grid')}
+            >
+              Grid
+            </Button>
+            <Button
+              variant={view === 'list' ? 'primary' : 'outline'}
+              size="sm"
+              className="px-2 sm:px-3"
+              onClick={() => setView('list')}
+            >
+              List
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderStats = () => (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      {[
+        { label: 'Total Patients', value: filteredPatients.length, icon: UserPlus },
+        { label: 'Critical', value: filteredPatients.filter(p => p.status === 'critical').length, icon: AlertTriangle },
+        { label: 'Needs Attention', value: filteredPatients.filter(p => p.status === 'needs_attention').length, icon: Eye },
+        { label: 'Stable', value: filteredPatients.filter(p => p.status === 'stable').length, icon: Heart }
+      ].map((stat, index) => (
+        <Card key={index} className="bg-white hover:shadow-md transition-shadow duration-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">{stat.label}</p>
+                <p className="text-2xl font-bold mt-1">{stat.value}</p>
+              </div>
+              <div className={`p-2 rounded-lg ${
+                index === 0 ? 'bg-blue-100 text-blue-600' :
+                index === 1 ? 'bg-red-100 text-red-600' :
+                index === 2 ? 'bg-yellow-100 text-yellow-600' :
+                'bg-green-100 text-green-600'
+              }`}>
+                <stat.icon className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+
+  const renderPatientList = () => (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adherence</th>
+              <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Appointment</th>
+              <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredPatients.map((patient) => (
+              <tr key={patient.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-primary-600 font-medium">
+                        {patient.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div className="ml-4 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">{patient.name}</div>
+                      <div className="text-sm text-gray-500">Age {patient.age}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 truncate">{patient.email}</div>
+                  <div className="text-sm text-gray-500 truncate">{patient.phone}</div>
+                </td>
+                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                  <Badge className={getStatusColor(patient.status)}>
+                    {getStatusLabel(patient.status)}
+                  </Badge>
+                </td>
+                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          patient.adherence_rate >= 90 ? 'bg-green-500' :
+                          patient.adherence_rate >= 70 ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${patient.adherence_rate}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-600">{patient.adherence_rate}%</span>
+                  </div>
+                </td>
+                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 truncate">{patient.next_appointment}</div>
+                </td>
+                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex items-center justify-end space-x-2">
+                    <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-900">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-900">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-900">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="flex-1 min-w-0">
+      {renderHeader()}
+      <main className="p-4 sm:p-6 max-w-7xl mx-auto overflow-hidden">
+        {renderFilters()}
+        {renderStats()}
+        {view === 'list' ? renderPatientList() : null}
+      </main>
     </div>
   )
 } 

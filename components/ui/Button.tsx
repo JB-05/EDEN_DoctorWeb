@@ -2,7 +2,7 @@ import React from 'react'
 import { clsx } from 'clsx'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'outline'
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'outline' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
   icon?: React.ReactNode
@@ -27,7 +27,8 @@ export const Button: React.FC<ButtonProps> = ({
     secondary: 'bg-white hover:bg-gray-50 focus:ring-medical-500 text-medical-600 border border-medical-200 shadow-sm',
     danger: 'bg-danger-600 hover:bg-danger-700 focus:ring-danger-500 text-white shadow-sm hover:shadow-md',
     success: 'bg-healthcare-600 hover:bg-healthcare-700 focus:ring-healthcare-500 text-white shadow-sm hover:shadow-md',
-    outline: 'bg-transparent hover:bg-gray-50 focus:ring-gray-500 text-gray-700 border border-gray-300'
+    outline: 'bg-transparent hover:bg-gray-50 focus:ring-gray-500 text-gray-700 border border-gray-300',
+    ghost: 'bg-transparent hover:bg-gray-100 focus:ring-gray-500 text-gray-600 hover:text-gray-900'
   }
   
   const sizeClasses = {

@@ -1,4 +1,4 @@
-// File: E:\EDEN_4_0\app\page.tsx
+// File: E:\EDEN_4_0\DrWeb\app\page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

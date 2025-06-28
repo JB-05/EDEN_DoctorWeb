@@ -1,4 +1,4 @@
-// File: E:\EDEN_4_0\app\dashboard\layout.tsx
+// File: E:\EDEN_4_0\DrWeb\app\dashboard\layout.tsx
 import * as entry from '../../../../app/dashboard/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
